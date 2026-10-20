@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "等待型工具进度条",
+    "description": "在对话流内的阻塞型工具调用（wait_agent、job_output、bash、ask_user_question）下方显示「deepsleeping / 预算」进度条与随进度移动的图片，工具返回后自动收起。设置 → 等待进度条 提供图形化设置页。"
+  }
+}

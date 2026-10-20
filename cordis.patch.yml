@@ -1,0 +1,43 @@
+# deepsleep-progress bundle patch.
+#
+# The row below is editable from the profile's own cordis.patch.yml: override the
+# same id and restate every key you want to keep (a patch replaces the whole
+# `config` of the targeted row; keys you omit fall back to the plugin defaults).
+#
+# `tools` is the whitelist: a positive number is the assumed time budget in
+# milliseconds, `null` means "budget unknown" (no bar; only the head picture
+# and the text stay, left-aligned).
+# A tool name absent from `tools` never gets a bar. An explicit
+# `timeout_ms` / `timeoutMs` / `timeout` argument always wins over the budget
+# configured here.
+
+- insert:
+    - id: deepsleep-progress
+      name: 'dsh-deepsleep-progress'
+      config:
+        enabled: true
+        showDelayMs: 350
+        tickMs: 100
+        inferSleepBudget: true
+        tools:
+          wait_agent: 30000
+          job_output: 60000
+          bash: null
+          ask_user_question: null
+        label: deepsleeping
+        # 末端图片：http(s) URL 或 data URI（GIF/APNG 可动）；'' 关闭；默认内置测试图。
+        # headImage: 'data:image/gif;base64,…'
+        headSize: 18
+        clockFormat: '{elapsed} / {budget}'
+        unknownBudgetText: '—'
+        height: 3
+        radius: 2
+        inset: 22
+        gapTop: 2
+        gapBottom: 6
+        fontSize: 11
+        track: 'rgba(148, 158, 190, 0.22)'
+        accent: 'rgb(77, 107, 254)'
+        overrunAccent: 'rgb(240, 169, 58)'
+        labelColor: 'rgb(138, 143, 153)'
+        clockColor: 'rgb(138, 143, 153)'

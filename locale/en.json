@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Wait Progress Bars",
+    "description": "Shows a deepsleeping/budget progress bar with a moving head image under blocking tool calls (wait_agent, job_output, bash, ask_user_question) in the conversation flow, and retires it when the call returns. Settings → Wait progress adds a graphical settings page."
+  }
+}
