@@ -1,3 +1,4 @@
+纯ai编写
 # dsh-deepsleep-progress
 
 > 仓库：https://github.com/xyzYaeMiko/dsh-deepsleep-progress ｜ npm：`dsh-deepsleep-progress`（待发布）
