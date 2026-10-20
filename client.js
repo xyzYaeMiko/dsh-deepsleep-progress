@@ -33,8 +33,13 @@ window.__ModuleLoader__.load({
     const DEFAULT_TOOLS = {
       wait_agent: 30000,
       job_output: 60000,
-      bash: null,
       ask_user_question: null,
+      // Shell tools by platform: bash on Linux/macOS, pwsh on Windows.
+      // The two aliases are defensive for older or third-party Windows builds.
+      bash: null,
+      pwsh: null,
+      powershell: null,
+      cmd: null,
     };
 
     /** Default head picture riding the leading edge: the bundled sleeping whale (96 px RGBA data URI). */
@@ -90,15 +95,25 @@ window.__ModuleLoader__.load({
       return typeof value === 'string' && value.length > 0 ? value : fallback;
     }
 
-    /** Whitelist normalized into `tool name -> budget ms | null`. */
+    /**
+     * Whitelist normalized into `tool name -> budget ms | null`.
+     * The cross-platform defaults stay enabled unless the config overrides them:
+     * a positive number sets a budget, `null`/`0`/`true` means "budget unknown",
+     * `false` removes a default entry, and an unseen name is added.
+     */
     function normalizeTools(value) {
       const tools = {};
-      const source = isRecord(value) ? value : DEFAULT_TOOLS;
+      for (const toolName of Object.keys(DEFAULT_TOOLS)) tools[toolName] = DEFAULT_TOOLS[toolName];
+      const source = isRecord(value) ? value : {};
       for (const toolName of Object.keys(source)) {
         const budget = source[toolName];
+        if (budget === false) {
+          delete tools[toolName];
+          continue;
+        }
         if (typeof budget === 'number' && Number.isFinite(budget) && budget > 0) tools[toolName] = budget;
-        else if (budget === null || budget === 0) tools[toolName] = null;
-        // false / negative / malformed values remove the tool from the whitelist.
+        else if (budget === null || budget === 0 || budget === true) tools[toolName] = null;
+        // negative / malformed values are ignored: defaults survive, unknown names are not added.
       }
       return tools;
     }
@@ -168,15 +183,35 @@ window.__ModuleLoader__.load({
       }
       if (!isRecord(args) || typeof args.command !== 'string') return null;
       const units = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
-      const pattern = /(?:^|[;&|(\n]|\bthen\b|\bdo\b)\s*sleep\s+([0-9]+(?:\.[0-9]+)?)\s*([smhd]?)(?=[\s;&|)\n]|$)/gi;
+      // Unix `sleep N[unit]` and PowerShell `Start-Sleep [-Seconds|-Milliseconds] N`
+      // (plus the `sleep` alias). Only command-position occurrences count.
+      const switchUnits = {
+        seconds: 1000,
+        second: 1000,
+        milliseconds: 1,
+        millisecond: 1,
+        s: 1000,
+        m: 1,
+      };
+      const pattern =
+        /(?:^|[;&|(\n]|\bthen\b|\bdo\b)\s*(start-sleep|sleep)\s+(?:-(seconds?|milliseconds?|s|m)\s+)?([0-9]+(?:\.[0-9]+)?)\s*([smhd]?)(?=[\s;&|)\n]|$)/gi;
       let total = 0;
       let found = false;
       let match;
       while ((match = pattern.exec(args.command)) !== null) {
-        const amount = Number(match[1]);
+        const amount = Number(match[3]);
         if (!Number.isFinite(amount) || amount <= 0) continue;
-        const unit = (match[2] || 's').toLowerCase();
-        const ms = amount * (units[unit] === undefined ? 1000 : units[unit]);
+        const switchUnit = match[2] === undefined ? null : match[2].toLowerCase();
+        const suffix = (match[4] || '').toLowerCase();
+        const unitMs =
+          switchUnit !== null
+            ? switchUnits[switchUnit] === undefined
+              ? 1000
+              : switchUnits[switchUnit]
+            : units[suffix] === undefined
+              ? 1000
+              : units[suffix];
+        const ms = amount * unitMs;
         if (!Number.isFinite(ms) || ms <= 0) continue;
         total += ms;
         found = true;
@@ -326,7 +361,6 @@ window.__ModuleLoader__.load({
         if (!Number.isFinite(budget) || budget <= 0) return { error: lines[index].trim() };
         tools[name] = budget;
       }
-      if (Object.keys(tools).length === 0) return { error: '' };
       return { tools };
     }
 
@@ -348,7 +382,7 @@ window.__ModuleLoader__.load({
         clockFormat: 'Clock format',
         clockFormatHint: 'Tokens: {elapsed} {budget} {remaining} {ratio}',
         tools: 'Watched tools and budgets',
-        toolsHint: 'One tool per line: name: budget-ms, or name: unknown. Tools not listed are ignored.',
+        toolsHint: 'One tool per line: name: budget-ms, or name: unknown. The defaults cover bash (Linux/macOS) and pwsh (Windows); remove a line to disable that tool.',
         applyTools: 'Apply tool list',
         toolsInvalid: 'Not a valid line: {line}. Use "name: 30000" or "name: unknown".',
         groupHead: 'Head picture',
@@ -401,7 +435,7 @@ window.__ModuleLoader__.load({
         clockFormat: '时钟格式',
         clockFormatHint: '可用 {elapsed} {budget} {remaining} {ratio}',
         tools: '监控的工具与预算',
-        toolsHint: '每行一个：工具名: 预算毫秒，或 工具名: unknown。未列出的工具不显示。',
+        toolsHint: '每行一个：工具名: 预算毫秒，或 工具名: unknown。默认已含 bash（Linux/macOS）与 pwsh（Windows）；删掉某行即禁用该工具。',
         applyTools: '应用工具列表',
         toolsInvalid: '无法识别这一行：{line}。请写成「工具名: 30000」或「工具名: unknown」。',
         groupHead: '末端图片',
@@ -1082,6 +1116,11 @@ window.__ModuleLoader__.load({
         if (parsed.error !== undefined) {
           setToolsError(t('toolsInvalid', { line: parsed.error === '' ? '(empty)' : parsed.error }));
           return;
+        }
+        // The list shows the effective whitelist, so a removed default line must
+        // become an explicit `false` override instead of silently falling back.
+        for (const name of Object.keys(DEFAULT_TOOLS)) {
+          if (!Object.prototype.hasOwnProperty.call(parsed.tools, name)) parsed.tools[name] = false;
         }
         setToolsError('');
         update({ tools: parsed.tools });

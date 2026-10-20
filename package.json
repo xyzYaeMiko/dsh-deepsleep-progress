@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepsleep-progress",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "DSH Web plugin: an elapsed/budget progress bar with a moving head image under blocking tool calls (wait_agent, job_output, bash, ask_user_question), plus a graphical settings page.",
   "exports": {

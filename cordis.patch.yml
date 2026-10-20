@@ -22,8 +22,11 @@
         tools:
           wait_agent: 30000
           job_output: 60000
-          bash: null
           ask_user_question: null
+          bash: null            # Linux / macOS shell
+          pwsh: null            # Windows PowerShell shell
+          powershell: null      # defensive alias for older/third-party Windows builds
+          cmd: null             # defensive alias
         label: deepsleeping
         # 末端图片：http(s) URL 或 data URI（GIF/APNG 可动）；'' 关闭；默认内置测试图。
         # headImage: 'data:image/gif;base64,…'

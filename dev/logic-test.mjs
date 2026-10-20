@@ -131,6 +131,13 @@ const contextFor = (def, state, extra = {}) => ({
   assert.equal(run('bash', { command: 'ps aux | grep sleep 5' }).inferredBudget, null, 'quoted/trailing sleep is not command-position');
   assert.equal(run('wait_agent', { timeout_ms: 30000 }).inferredBudget, null);
 
+  // Windows PowerShell shell + Start-Sleep forms
+  assert.ok(run('pwsh', { command: "sleep 12; Write-Output '12 秒到'" }).inferredBudget === 12000);
+  assert.equal(run('pwsh', { command: 'Start-Sleep -Seconds 12' }).inferredBudget, 12000);
+  assert.equal(run('pwsh', { command: 'Start-Sleep -Milliseconds 500' }).inferredBudget, 500);
+  assert.equal(run('pwsh', { command: 'Start-Sleep 3' }).inferredBudget, 3000);
+  assert.equal(run('pwsh', { command: 'Write-Output "Start-Sleep 12"' }).inferredBudget, null);
+
   // Non-whitelisted tools and unparsable arguments.
   assert.equal(def.match['tool/call'](toolCall('x', 'read', { file_path: '/x' })), null);
   const badJson = event('tool/call', { turn: 1, step: 1, callId: 'c9', name: 'bash', arguments: '{not json' }, 11);

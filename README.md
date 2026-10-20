@@ -1,4 +1,3 @@
-纯ai编写
 # dsh-deepsleep-progress
 
 > 仓库：https://github.com/xyzYaeMiko/dsh-deepsleep-progress ｜ npm：`dsh-deepsleep-progress`（待发布）
@@ -11,7 +10,7 @@ DSH Web 插件：给「会阻塞等待」的工具调用在对话流里加一条
   **本地已等时长 ÷ 超时预算**，不是真实完成度。
 - 时间基准来自会话日志：`tool/call` 事件的 `time`（epoch ms），不是插件加载时刻。
 - 预算来源（优先级从高到低，`inferSleepBudget` 默认开启）：
-  1. 命令里字面 `sleep N` 的时长（仅 bash 类命令；多个 sleep 累加；
+  1. 命令里字面 `sleep N` / `Start-Sleep …` 的时长（bash 与 pwsh；多个累加；
      `echo "sleep 5"` 这种不作为命中）；
   2. 调用参数里的 `timeout_ms` / `timeoutMs` / `timeout`（毫秒；比 sleep 更小则作为封顶）；
   3. `config.tools[工具名]` 里配置的预算；
@@ -46,7 +45,8 @@ DSH Web 插件：给「会阻塞等待」的工具调用在对话流里加一条
     tools:
       wait_agent: 120000
       job_output: 90000
-      bash: 600000
+      bash: 600000        # Linux/macOS
+      pwsh: 600000        # Windows
       ask_user_question: null
     # 外观
     accent: 'rgb(77, 107, 254)'        # 填充色（设置页用取色器/ RGB / 十六进制编辑）
